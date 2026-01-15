@@ -9,8 +9,39 @@ import { app } from "../../scripts/app.js";
 // State management
 let currentTimeframe = "all";
 let currentSort = "last_used";
+let searchQuery = "";
 let usageData = null;
 let isLoading = false;
+let showSettings = false;
+
+// Settings with defaults
+let settings = {
+    staleThresholdDays: 30,
+};
+
+// Load settings from localStorage
+function loadSettings() {
+    try {
+        const saved = localStorage.getItem("modelpulse_settings");
+        if (saved) {
+            settings = { ...settings, ...JSON.parse(saved) };
+        }
+    } catch (e) {
+        console.warn("[ModelPulse] Failed to load settings:", e);
+    }
+}
+
+// Save settings to localStorage
+function saveSettings() {
+    try {
+        localStorage.setItem("modelpulse_settings", JSON.stringify(settings));
+    } catch (e) {
+        console.warn("[ModelPulse] Failed to save settings:", e);
+    }
+}
+
+// Initialize settings on load
+loadSettings();
 
 /**
  * Fetch usage data from the API
@@ -74,14 +105,26 @@ function getCategoryInfo(category) {
 }
 
 /**
- * Check if a model is stale (unused for > 30 days)
+ * Check if a model is stale (unused for > threshold days)
  */
 function isStale(lastUsed) {
     if (!lastUsed) return true;
     const date = new Date(lastUsed);
     const now = new Date();
     const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-    return diffDays > 30;
+    return diffDays > settings.staleThresholdDays;
+}
+
+/**
+ * Filter models by search query
+ */
+function filterModels(models, query) {
+    if (!query || !query.trim()) return models;
+    const lowerQuery = query.toLowerCase().trim();
+    return models.filter(model =>
+        model.name.toLowerCase().includes(lowerQuery) ||
+        model.category.toLowerCase().includes(lowerQuery)
+    );
 }
 
 /**
@@ -311,6 +354,117 @@ function createStyles() {
             height: 100px;
             color: var(--descrip-text, #999);
         }
+
+        .modelpulse-search-container {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color, #444);
+        }
+
+        .modelpulse-search {
+            width: 100%;
+            padding: 8px 10px;
+            background: var(--comfy-input-bg, #222);
+            border: 1px solid var(--border-color, #444);
+            border-radius: 4px;
+            color: var(--input-text, #ddd);
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .modelpulse-search:focus {
+            outline: none;
+            border-color: var(--primary-color, #4a9eff);
+        }
+
+        .modelpulse-search::placeholder {
+            color: var(--descrip-text, #999);
+        }
+
+        .modelpulse-header-buttons {
+            display: flex;
+            gap: 4px;
+        }
+
+        .modelpulse-settings-btn {
+            background: transparent;
+            border: none;
+            color: var(--input-text, #ddd);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .modelpulse-settings-btn:hover {
+            background: var(--comfy-menu-bg-hover, #333);
+        }
+
+        .modelpulse-settings-panel {
+            padding: 12px;
+            background: var(--comfy-menu-bg, #2a2a2a);
+            border-bottom: 1px solid var(--border-color, #444);
+        }
+
+        .modelpulse-settings-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modelpulse-settings-close {
+            background: transparent;
+            border: none;
+            color: var(--input-text, #ddd);
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .modelpulse-settings-close:hover {
+            background: var(--comfy-menu-bg-hover, #333);
+        }
+
+        .modelpulse-setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .modelpulse-setting-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .modelpulse-setting-label {
+            font-size: 12px;
+            color: var(--input-text, #ddd);
+        }
+
+        .modelpulse-setting-input {
+            width: 60px;
+            padding: 4px 8px;
+            background: var(--comfy-input-bg, #222);
+            border: 1px solid var(--border-color, #444);
+            border-radius: 4px;
+            color: var(--input-text, #ddd);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .modelpulse-setting-input:focus {
+            outline: none;
+            border-color: var(--primary-color, #4a9eff);
+        }
+
+        .modelpulse-no-results {
+            padding: 20px;
+            text-align: center;
+            color: var(--descrip-text, #999);
+            font-size: 12px;
+        }
     `;
     return style;
 }
@@ -332,9 +486,37 @@ async function renderModelPulseUI(container) {
     header.className = "modelpulse-header";
     header.innerHTML = `
         <span class="modelpulse-title">Usage</span>
-        <button class="modelpulse-refresh" title="Refresh">↻</button>
+        <div class="modelpulse-header-buttons">
+            <button class="modelpulse-settings-btn" title="Settings">⚙</button>
+            <button class="modelpulse-refresh" title="Refresh">↻</button>
+        </div>
     `;
     main.appendChild(header);
+
+    // Settings panel (hidden by default)
+    const settingsPanel = document.createElement("div");
+    settingsPanel.className = "modelpulse-settings-panel";
+    settingsPanel.style.display = "none";
+    settingsPanel.innerHTML = `
+        <div class="modelpulse-settings-title">
+            <span>Settings</span>
+            <button class="modelpulse-settings-close">×</button>
+        </div>
+        <div class="modelpulse-setting-row">
+            <label class="modelpulse-setting-label">Stale threshold (days)</label>
+            <input type="number" class="modelpulse-setting-input" id="stale-threshold"
+                   value="${settings.staleThresholdDays}" min="1" max="365">
+        </div>
+    `;
+    main.appendChild(settingsPanel);
+
+    // Search bar
+    const searchContainer = document.createElement("div");
+    searchContainer.className = "modelpulse-search-container";
+    searchContainer.innerHTML = `
+        <input type="text" class="modelpulse-search" placeholder="Search models..." value="${searchQuery}">
+    `;
+    main.appendChild(searchContainer);
 
     // Timeframe tabs
     const tabs = document.createElement("div");
@@ -366,7 +548,43 @@ async function renderModelPulseUI(container) {
 
     // Event handlers
     const refreshBtn = header.querySelector(".modelpulse-refresh");
+    const settingsBtn = header.querySelector(".modelpulse-settings-btn");
+    const settingsClose = settingsPanel.querySelector(".modelpulse-settings-close");
+    const staleThresholdInput = settingsPanel.querySelector("#stale-threshold");
+    const searchInput = searchContainer.querySelector(".modelpulse-search");
+
     refreshBtn.addEventListener("click", () => refreshData(list, refreshBtn));
+
+    // Settings toggle
+    settingsBtn.addEventListener("click", () => {
+        showSettings = !showSettings;
+        settingsPanel.style.display = showSettings ? "block" : "none";
+    });
+
+    settingsClose.addEventListener("click", () => {
+        showSettings = false;
+        settingsPanel.style.display = "none";
+    });
+
+    // Settings change handler
+    staleThresholdInput.addEventListener("change", () => {
+        const value = parseInt(staleThresholdInput.value, 10);
+        if (value >= 1 && value <= 365) {
+            settings.staleThresholdDays = value;
+            saveSettings();
+            renderModelList(list); // Re-render to update stale highlighting
+        }
+    });
+
+    // Search handler with debounce
+    let searchTimeout;
+    searchInput.addEventListener("input", () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            searchQuery = searchInput.value;
+            renderModelList(list);
+        }, 200);
+    });
 
     tabs.addEventListener("click", (e) => {
         const tab = e.target.closest(".modelpulse-tab");
@@ -431,7 +649,19 @@ function renderModelList(container) {
         return;
     }
 
-    const grouped = groupByCategory(usageData.models);
+    // Apply search filter
+    const filteredModels = filterModels(usageData.models, searchQuery);
+
+    if (filteredModels.length === 0) {
+        container.innerHTML = `
+            <div class="modelpulse-no-results">
+                No models found matching "${searchQuery}"
+            </div>
+        `;
+        return;
+    }
+
+    const grouped = groupByCategory(filteredModels);
 
     // Sort categories by total usage
     const sortedCategories = Object.keys(grouped).sort((a, b) => {
