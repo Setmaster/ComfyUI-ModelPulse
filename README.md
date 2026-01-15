@@ -28,7 +28,7 @@ Search for "ModelPulse" in ComfyUI Manager and click Install.
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/your-username/ComfyUI-ModelPulse.git
+git clone https://github.com/Setmaster/ComfyUI-ModelPulse.git
 ```
 
 Restart ComfyUI after installation.

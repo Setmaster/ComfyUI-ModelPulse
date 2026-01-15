@@ -1,0 +1,18 @@
+[project]
+name = "comfyui-modelpulse"
+version = "1.0.0"
+description = "Track model usage frequency to identify abandoned or underutilized models"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/Setmaster/ComfyUI-ModelPulse"
+Repository = "https://github.com/Setmaster/ComfyUI-ModelPulse"
+Issues = "https://github.com/Setmaster/ComfyUI-ModelPulse/issues"
+
+[tool.comfy]
+PublisherId = "setmaster"
+DisplayName = "ModelPulse"
+Icon = "chart-line"
