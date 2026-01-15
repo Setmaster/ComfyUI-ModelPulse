@@ -62,6 +62,21 @@ async function fetchUsageData(timeframe = "all", sortBy = "last_used") {
 }
 
 /**
+ * Format file size to human readable string (GB or MB)
+ */
+function formatFileSize(bytes) {
+    if (bytes === null || bytes === undefined) return null;
+
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1) {
+        return `${gb.toFixed(1)} GB`;
+    }
+
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(0)} MB`;
+}
+
+/**
  * Format ISO date to relative time string
  */
 function formatLastUsed(isoDate) {
@@ -761,12 +776,14 @@ function renderModelList(container) {
 
             const countLabel = currentTimeframe === "all" ? "Uses" : "Uses (period)";
             const count = currentTimeframe === "all" ? model.usage_count : model.timeframe_count;
+            const sizeStr = formatFileSize(model.file_size);
 
             modelDiv.innerHTML = `
                 <div class="modelpulse-model-name" title="${model.model_id}">${model.name}</div>
                 <div class="modelpulse-model-stats">
                     <span class="modelpulse-usage">${countLabel}: ${count}</span>
                     <span class="modelpulse-last-used">Last: ${formatLastUsed(model.last_used)}</span>
+                    ${sizeStr ? `<span class="modelpulse-size">${sizeStr}</span>` : ""}
                 </div>
             `;
             modelsDiv.appendChild(modelDiv);

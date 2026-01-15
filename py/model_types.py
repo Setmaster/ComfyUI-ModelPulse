@@ -102,3 +102,17 @@ MODEL_CATEGORIES: dict[str, dict[str, str]] = {
         "icon": "pi-database",
     },
 }
+
+# Map categories to ComfyUI model folder names
+CATEGORY_FOLDERS: dict[str, str] = {
+    "checkpoint": "checkpoints",
+    "lora": "loras",
+    "vae": "vae",
+    "controlnet": "controlnet",
+    "clip": "clip",
+    "unet": "unet",
+    "upscaler": "upscale_models",
+    "style_model": "style_models",
+    "gligen": "gligen",
+    "gguf": "unet",  # GGUF models are stored in unet folder
+}

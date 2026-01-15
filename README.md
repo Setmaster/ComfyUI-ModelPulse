@@ -10,10 +10,12 @@ A ComfyUI extension that tracks model usage frequency, helping you identify aban
 
 - **Automatic Tracking** - Monitors usage of all model types: checkpoints, LoRAs, VAEs, ControlNets, CLIP, UNETs, upscalers, GGUF, and more
 - **Sidebar Panel** - View usage statistics directly in ComfyUI's sidebar
+- **File Size Display** - Shows model file sizes (GB/MB) to help identify storage-heavy models
 - **Time Filtering** - View usage for all time, this month, or this week
 - **Smart Sorting** - Sort by last used, usage count, or name
-- **Stale Detection** - Models unused for 30+ days are highlighted
+- **Stale Detection** - Models unused for 30+ days are highlighted (configurable threshold)
 - **Category Grouping** - Models organized by type with collapsible sections
+- **Reset Tracking** - Clear all usage data from the settings panel
 - **Zero Dependencies** - Uses only Python standard library
 
 ## Installation

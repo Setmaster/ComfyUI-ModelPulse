@@ -5,10 +5,58 @@ Extracts models from prompts and records usage statistics.
 """
 
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
-from .model_types import MODEL_LOADERS, LOADER_PATTERNS
+from .model_types import MODEL_LOADERS, LOADER_PATTERNS, CATEGORY_FOLDERS
 from .storage import load_data, save_data, cleanup_old_usage_logs
+
+# Try to import ComfyUI's folder_paths for proper model path resolution
+try:
+    import folder_paths
+    HAS_FOLDER_PATHS = True
+except ImportError:
+    HAS_FOLDER_PATHS = False
+
+
+def get_model_file_size(category: str, name: str) -> int | None:
+    """
+    Get the file size of a model in bytes.
+
+    Uses ComfyUI's folder_paths to find models in all configured locations.
+
+    Args:
+        category: The model category (e.g., 'checkpoint', 'lora')
+        name: The model filename
+
+    Returns:
+        File size in bytes, or None if file not found
+    """
+    if not HAS_FOLDER_PATHS:
+        return None
+
+    # Map our categories to ComfyUI's folder_paths keys
+    folder_key = CATEGORY_FOLDERS.get(category)
+
+    # For GGUF, try multiple folders since models can be unet or clip
+    if category == "gguf":
+        folder_keys = ["unet", "diffusion_models", "clip"]
+    elif category == "unet":
+        folder_keys = ["unet", "diffusion_models"]
+    elif folder_key:
+        folder_keys = [folder_key]
+    else:
+        return None
+
+    for key in folder_keys:
+        try:
+            full_path = folder_paths.get_full_path(key, name)
+            if full_path:
+                return Path(full_path).stat().st_size
+        except Exception:
+            continue
+
+    return None
 
 
 class ModelTracker:
@@ -206,6 +254,9 @@ class ModelTracker:
             else:
                 timeframe_count = model_data["usage_count"]
 
+            # Get file size
+            file_size = get_model_file_size(model_data["category"], model_data["name"])
+
             models_list.append({
                 "model_id": model_id,
                 "category": model_data["category"],
@@ -214,6 +265,7 @@ class ModelTracker:
                 "last_used": model_data["last_used"],
                 "usage_count": model_data["usage_count"],
                 "timeframe_count": timeframe_count,
+                "file_size": file_size,
             })
 
         # Sort the results
