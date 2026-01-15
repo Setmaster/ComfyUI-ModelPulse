@@ -100,6 +100,7 @@ function getCategoryInfo(category) {
         upscaler: { name: "Upscalers", icon: "🔍" },
         style_model: { name: "Style Models", icon: "🎨" },
         gligen: { name: "GLIGEN", icon: "📐" },
+        gguf: { name: "GGUF", icon: "🗜️" },
     };
     return categories[category] || { name: category, icon: "📁" };
 }

@@ -36,6 +36,14 @@ MODEL_LOADERS: dict[str, tuple[str, str | list[str]]] = {
 
     # GLIGEN loaders
     "GLIGENLoader": ("gligen", "gligen_name"),
+
+    # GGUF loaders (ComfyUI-GGUF by city96)
+    "UnetLoaderGGUF": ("gguf", "unet_name"),
+    "UnetLoaderGGUFAdvanced": ("gguf", "unet_name"),
+    "CLIPLoaderGGUF": ("gguf", "clip_name"),
+    "DualCLIPLoaderGGUF": ("gguf", ["clip_name1", "clip_name2"]),
+    "TripleCLIPLoaderGGUF": ("gguf", ["clip_name1", "clip_name2", "clip_name3"]),
+    "QuadrupleCLIPLoaderGGUF": ("gguf", ["clip_name1", "clip_name2", "clip_name3", "clip_name4"]),
 }
 
 # Patterns for detecting custom node loaders (Impact Pack, Efficiency Nodes, etc.)
@@ -88,5 +96,9 @@ MODEL_CATEGORIES: dict[str, dict[str, str]] = {
     "gligen": {
         "name": "GLIGEN",
         "icon": "pi-th-large",
+    },
+    "gguf": {
+        "name": "GGUF",
+        "icon": "pi-database",
     },
 }

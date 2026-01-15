@@ -8,7 +8,7 @@ A ComfyUI extension that tracks model usage frequency, helping you identify aban
 
 ## Features
 
-- **Automatic Tracking** - Monitors usage of all model types: checkpoints, LoRAs, VAEs, ControlNets, CLIP, UNETs, upscalers, and more
+- **Automatic Tracking** - Monitors usage of all model types: checkpoints, LoRAs, VAEs, ControlNets, CLIP, UNETs, upscalers, GGUF, and more
 - **Sidebar Panel** - View usage statistics directly in ComfyUI's sidebar
 - **Time Filtering** - View usage for all time, this month, or this week
 - **Smart Sorting** - Sort by last used, usage count, or name
@@ -52,6 +52,7 @@ Restart ComfyUI after installation.
 | Upscalers | UpscaleModelLoader |
 | Style Models | StyleModelLoader |
 | GLIGEN | GLIGENLoader |
+| GGUF | UnetLoaderGGUF, CLIPLoaderGGUF, DualCLIPLoaderGGUF, TripleCLIPLoaderGGUF, QuadrupleCLIPLoaderGGUF |
 
 Custom node loaders (Impact Pack, Efficiency Nodes, etc.) are also detected via pattern matching.
 
