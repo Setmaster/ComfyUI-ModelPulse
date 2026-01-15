@@ -466,6 +466,31 @@ function createStyles() {
             color: var(--descrip-text, #999);
             font-size: 12px;
         }
+
+        .modelpulse-reset-row {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color, #444);
+        }
+
+        .modelpulse-reset-btn {
+            padding: 4px 12px;
+            background: var(--error-text, #ff6b6b);
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .modelpulse-reset-btn:hover {
+            background: #ff5252;
+        }
+
+        .modelpulse-reset-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     `;
     return style;
 }
@@ -507,6 +532,10 @@ async function renderModelPulseUI(container) {
             <label class="modelpulse-setting-label">Stale threshold (days)</label>
             <input type="number" class="modelpulse-setting-input" id="stale-threshold"
                    value="${settings.staleThresholdDays}" min="1" max="365">
+        </div>
+        <div class="modelpulse-setting-row modelpulse-reset-row">
+            <label class="modelpulse-setting-label">Reset all tracking data</label>
+            <button class="modelpulse-reset-btn" id="reset-data">Reset</button>
         </div>
     `;
     main.appendChild(settingsPanel);
@@ -574,6 +603,33 @@ async function renderModelPulseUI(container) {
             settings.staleThresholdDays = value;
             saveSettings();
             renderModelList(list); // Re-render to update stale highlighting
+        }
+    });
+
+    // Reset button handler
+    const resetBtn = settingsPanel.querySelector("#reset-data");
+    resetBtn.addEventListener("click", async () => {
+        if (!confirm("Are you sure you want to reset all tracking data? This cannot be undone.")) {
+            return;
+        }
+        resetBtn.disabled = true;
+        resetBtn.textContent = "Resetting...";
+        try {
+            const response = await fetch("/modelpulse/reset", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ confirm: true }),
+            });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            await refreshData(list, refreshBtn);
+        } catch (error) {
+            console.error("[ModelPulse] Error resetting data:", error);
+            alert("Failed to reset tracking data. Check console for details.");
+        } finally {
+            resetBtn.disabled = false;
+            resetBtn.textContent = "Reset";
         }
     });
 
